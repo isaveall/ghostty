@@ -113,7 +113,7 @@ pub const compatibility = std.StaticStringMap(
 /// Warning: This setting cannot be reloaded at runtime. To change the language
 /// you must fully restart Ghostty.
 ///
-/// GTK only.
+/// Available on GTK and macOS.
 /// Available since 1.3.0.
 language: ?[:0]const u8 = null,
 

@@ -5,6 +5,14 @@ const locales = @import("i18n_locales.zig");
 
 const log = std.log.scoped(.i18n);
 
+/// Buffer for the currently active gettext domain name.
+/// Supports domain names up to 63 bytes (e.g. "com.mitchellh.ghostty.zh_CN").
+var domain_buf: [64]u8 = undefined;
+
+/// Pointer into domain_buf for the currently active domain.
+/// When non-null, `_()` uses this domain instead of the base bundle ID.
+var active_domain: ?[*:0]const u8 = null;
+
 /// Set for faster membership lookup of locales.
 pub const locales_map = map: {
     var kvs: [locales.len]struct { []const u8 } = undefined;
@@ -47,6 +55,21 @@ pub fn init(resources_dir: []const u8) InitError!void {
             log.debug("binding domain={s} path={s}", .{ build_config.bundle_id, path });
             _ = bindtextdomain(build_config.bundle_id, path.ptr) orelse
                 return error.OutOfMemory;
+
+            // Bind language-specific domains. The build system installs .mo
+            // files under both the base domain and language-specific domains
+            // (e.g., com.mitchellh.ghostty.zh_CN.mo). Gettext caches loaded
+            // catalogs per (domain, dirname) pair, so using different domains
+            // for different languages enables runtime language switching.
+            for (locales.locales) |lang| {
+                var domain_buf_local: [256]u8 = undefined;
+                const lang_domain = std.fmt.bufPrintZ(
+                    &domain_buf_local,
+                    "{s}.{s}",
+                    .{ build_config.bundle_id, lang },
+                ) catch continue;
+                _ = bindtextdomain(lang_domain.ptr, path.ptr);
+            }
         },
     }
 }
@@ -62,9 +85,38 @@ pub fn initGlobalDomain() error{OutOfMemory}!void {
 }
 
 /// Translate a message for the Ghostty domain.
+/// When a language-specific domain is active, uses that domain to bypass
+/// gettext's catalog caching.
 pub fn _(msgid: [*:0]const u8) [*:0]const u8 {
     if (comptime !build_config.i18n) return msgid;
+    if (active_domain) |domain| {
+        return dgettext(domain, msgid);
+    }
     return dgettext(build_config.bundle_id, msgid);
+}
+
+/// Set the active language for translations. Uses a language-specific
+/// gettext domain (e.g., "com.mitchellh.ghostty.zh_CN") so that gettext
+/// loads a different catalog, bypassing its per-domain caching.
+pub fn setLanguage(lang: [:0]const u8) void {
+    if (comptime !build_config.i18n) return;
+    if (std.fmt.bufPrintZ(
+        &domain_buf,
+        "{s}.{s}",
+        .{ build_config.bundle_id, lang },
+    )) |domain| {
+        active_domain = domain.ptr;
+        log.info("active gettext domain set to '{s}'", .{domain});
+    } else |_| {
+        log.warn("failed to build domain name for language '{s}'", .{lang});
+    }
+}
+
+/// Clear the active language, reverting to the base domain.
+pub fn unsetLanguage() void {
+    if (comptime !build_config.i18n) return;
+    active_domain = null;
+    log.info("active gettext domain cleared (base domain)", .{});
 }
 
 /// Canonicalize a locale name from a platform-specific value to

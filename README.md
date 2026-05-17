@@ -136,11 +136,36 @@ in Zig but we do a lot of platform-native things:
 - The Linux app is built with GTK.
 - The Linux app integrates deeply with systemd if available for things
   like always-on, new windows in a single instance, cgroup isolation, etc.
+- The macOS app supports runtime language switching through the Help menu's
+  Language submenu. Supported languages include Simplified Chinese,
+  Traditional Chinese, French, German, Japanese, Korean, Spanish, Brazilian
+  Portuguese, and Russian. Language changes are applied instantly without
+  requiring a restart, thanks to GNU gettext domain-based architecture.
+- Both macOS and Linux apps support runtime language switching via a
+  Language submenu. Supported languages include English, Simplified Chinese,
+  Traditional Chinese, French, German, Japanese, Korean, Spanish,
+  Brazilian Portuguese, and Russian. The UI translates instantly without
+  requiring a restart.
+
+- The language switching uses GNU gettext with language-specific
+  gettext domains, allowing different catalogs to be loaded at runtime
+  without restarting the application.
 
 Our goal with Ghostty is for users of whatever platform they run Ghostty
 on to think that Ghostty was built for their platform first and maybe even
 exclusively. We want Ghostty to feel like a native app on every platform,
 for the best definition of "native" on each platform.
+
+#### Internationalization (i18n)
+
+Ghostty supports runtime language switching through a Language submenu
+in the macOS Help menu and GTK main menu. The UI translates instantly
+without requiring a restart, using GNU gettext with language-specific
+domains to bypass gettext's per-domain catalog caching.
+
+Supported languages: English, Simplified Chinese, Traditional Chinese,
+French, German, Japanese, Korean, Spanish, Brazilian Portuguese, and
+Russian.
 
 #### Cross-platform `libghostty` for Embeddable Terminals
 

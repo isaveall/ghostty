@@ -33,11 +33,24 @@ pub fn init(b: *std.Build, cfg: *const Config) !GhosttyI18n {
         const msgfmt = b.addSystemCommand(&.{ "msgfmt", "-o", "-" });
         msgfmt.addFileArg(b.path("po/" ++ locale ++ ".po"));
 
+        // Install the .mo file under the base domain
+        const mo_out = msgfmt.captureStdOut();
         try steps.append(b.allocator, &b.addInstallFile(
-            msgfmt.captureStdOut(),
+            mo_out,
             std.fmt.comptimePrint(
                 "share/locale/{s}/LC_MESSAGES/{s}.mo",
                 .{ target_locale, domain },
+            ),
+        ).step);
+
+        // Also install under the language-specific domain so that
+        // gettext can load different catalogs for runtime language
+        // switching (gettext caches per domain).
+        try steps.append(b.allocator, &b.addInstallFile(
+            mo_out,
+            std.fmt.comptimePrint(
+                "share/locale/{s}/LC_MESSAGES/{s}.{s}.mo",
+                .{ target_locale, domain, target_locale },
             ),
         ).step);
     }

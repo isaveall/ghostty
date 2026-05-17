@@ -1081,6 +1081,7 @@ GHOSTTY_API bool ghostty_config_key_is_binding(ghostty_config_t, ghostty_input_k
 GHOSTTY_API uint32_t ghostty_config_diagnostics_count(ghostty_config_t);
 GHOSTTY_API ghostty_diagnostic_s ghostty_config_get_diagnostic(ghostty_config_t, uint32_t);
 GHOSTTY_API ghostty_string_s ghostty_config_open_path(void);
+GHOSTTY_API void ghostty_config_set_language(const char*);
 
 GHOSTTY_API ghostty_app_t ghostty_app_new(const ghostty_runtime_config_s*,
                                              ghostty_config_t);
@@ -1095,6 +1096,7 @@ GHOSTTY_API void ghostty_app_update_config(ghostty_app_t, ghostty_config_t);
 GHOSTTY_API bool ghostty_app_needs_confirm_quit(ghostty_app_t);
 GHOSTTY_API bool ghostty_app_has_global_keybinds(ghostty_app_t);
 GHOSTTY_API void ghostty_app_set_color_scheme(ghostty_app_t, ghostty_color_scheme_e);
+GHOSTTY_API void ghostty_app_apply_language(const char*);
 
 GHOSTTY_API ghostty_surface_config_s ghostty_surface_config_new();
 

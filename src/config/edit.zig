@@ -102,3 +102,74 @@ fn configPathCandidates(alloc_arena: Allocator) ![]const []const u8 {
 
     return paths.items;
 }
+
+/// Set the language configuration value in the config file.
+/// Pass null to remove the language setting (system default).
+/// The caller must free the returned memory is not applicable
+/// as this function manages its own memory internally.
+pub fn setLanguage(alloc_gpa: Allocator, language: ?[]const u8) !void {
+    var arena = ArenaAllocator.init(alloc_gpa);
+    defer arena.deinit();
+    const alloc_arena = arena.allocator();
+
+    const path = try configPath(alloc_arena);
+
+    // Read existing file content
+    const content = content: {
+        var file = std.fs.openFileAbsolute(path, .{}) catch |err| {
+            if (err == error.FileNotFound) {
+                // File doesn't exist yet
+                if (language) |lang| {
+                    // Create it with just the language setting
+                    var file2 = try std.fs.createFileAbsolute(path, .{});
+                    defer file2.close();
+                    var buf: [256]u8 = undefined;
+                    const line = std.fmt.bufPrint(&buf, "language = {s}\n", .{lang}) catch return error.OutOfMemory;
+                    try file2.writeAll(line);
+                }
+                return;
+            }
+            return err;
+        };
+        defer file.close();
+        break :content try file.readToEndAlloc(alloc_arena, 1024 * 1024);
+    };
+
+    // Find and replace the language line
+    var result = std.ArrayList(u8).initCapacity(alloc_arena, content.len + 64) catch return error.OutOfMemory;
+    defer result.deinit(alloc_arena);
+
+    var found = false;
+    var lines = std.mem.splitScalar(u8, content, '\n');
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t");
+        if (std.mem.startsWith(u8, trimmed, "language") and
+            std.mem.indexOf(u8, trimmed, "=") != null)
+        {
+            found = true;
+            if (language) |lang| {
+                try result.appendSlice(alloc_arena, "language = ");
+                try result.appendSlice(alloc_arena, lang);
+                try result.append(alloc_arena, '\n');
+            }
+            // If language is null, skip this line (remove it)
+        } else {
+            try result.appendSlice(alloc_arena, line);
+            try result.append(alloc_arena, '\n');
+        }
+    }
+
+    // If language line wasn't found and we have a value, append it
+    if (!found) {
+        if (language) |lang| {
+            try result.appendSlice(alloc_arena, "language = ");
+            try result.appendSlice(alloc_arena, lang);
+            try result.append(alloc_arena, '\n');
+        }
+    }
+
+    // Write back to file
+    var file = try std.fs.createFileAbsolute(path, .{});
+    defer file.close();
+    try file.writeAll(result.items);
+}

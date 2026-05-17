@@ -24,6 +24,10 @@ const String = @import("../main_c.zig").String;
 
 const log = std.log.scoped(.embedded_window);
 
+const c_locale = @cImport(@cInclude("locale.h"));
+const setlocale = c_locale.setlocale;
+const LC_ALL = c_locale.LC_ALL;
+
 pub const resourcesDir = internal_os.resourcesDir;
 
 pub const App = struct {
@@ -144,6 +148,63 @@ pub const App = struct {
             .opts = opts,
             .keymap = keymap,
         };
+
+        // Apply language config for i18n.
+        applyLanguage(config.language);
+    }
+
+    /// Apply a language setting to the current process. This sets the
+    /// LANG env var, reinitializes the locale, and refreshes gettext.
+    /// Pass null to restore the system default.
+    fn applyLanguage(language: ?[:0]const u8) void {
+        if (language) |lang| {
+            log.info("applyLanguage: setting to {s}", .{lang});
+            _ = internal_os.setenv("LANGUAGE", lang);
+            _ = internal_os.setenv("LANG", lang);
+            _ = setlocale(LC_ALL, "");
+            internal_os.i18n.setLanguage(lang);
+        } else {
+            log.info("applyLanguage: restoring system default", .{});
+            _ = internal_os.unsetenv("LANGUAGE");
+            _ = internal_os.unsetenv("LANG");
+            _ = internal_os.unsetenv("LC_ALL");
+            _ = internal_os.unsetenv("LC_MESSAGES");
+            internal_os.ensureLocale(std.heap.c_allocator) catch |err| {
+                log.warn("failed to restore system locale err={}", .{err});
+                _ = setlocale(LC_ALL, "");
+            };
+            // After ensureLocale, LANG is set to the system language.
+            // Read it and use a language-specific domain for translations.
+            if (internal_os.getenv(std.heap.c_allocator, "LANG")) |maybe_result| {
+                if (maybe_result) |result| {
+                    defer result.deinit(std.heap.c_allocator);
+                    // Strip encoding suffix (e.g., "zh_CN.UTF-8" -> "zh_CN")
+                    var lang_iter = std.mem.splitScalar(u8, result.value, '.');
+                    const lang = lang_iter.next() orelse result.value;
+                    if (lang.len > 0 and !std.mem.eql(u8, lang, "C")) {
+                        // Store in a local buffer with null terminator
+                        var lang_buf: [64]u8 = undefined;
+                        if (lang.len < lang_buf.len) {
+                            @memcpy(lang_buf[0..lang.len], lang);
+                            lang_buf[lang.len] = 0;
+                            const lang_z: [:0]const u8 = lang_buf[0..lang.len :0];
+                            internal_os.i18n.setLanguage(lang_z);
+                        }
+                    } else {
+                        internal_os.i18n.unsetLanguage();
+                    }
+                } else {
+                    internal_os.i18n.unsetLanguage();
+                }
+            } else |err| {
+                log.warn("failed to read LANG env var: {}", .{err});
+                internal_os.i18n.unsetLanguage();
+            }
+        }
+
+        // Debug: verify translation works after language change
+        const test_msg = internal_os.i18n._("New Tab");
+        log.info("applyLanguage: test 'New Tab' -> '{s}'", .{test_msg});
     }
 
     pub fn terminate(self: *App) void {
@@ -1531,6 +1592,20 @@ pub const CAPI = struct {
             log.err("error setting color scheme err={}", .{err});
             return;
         };
+    }
+
+    /// Apply a language locale change at runtime. This sets the LANG env var,
+    /// reinitializes setlocale, and refreshes gettext so subsequent
+    /// ghostty_translate() calls use the new language.
+    ///
+    /// Pass a null pointer to restore the system default locale.
+    export fn ghostty_app_apply_language(language_ptr: ?[*:0]const u8) void {
+        const language: ?[:0]const u8 = if (language_ptr) |ptr| blk: {
+            const str: [:0]const u8 = std.mem.span(ptr);
+            if (str.len == 0) break :blk null;
+            break :blk str;
+        } else null;
+        App.applyLanguage(language);
     }
 
     /// Returns initial surface options.

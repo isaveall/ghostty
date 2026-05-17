@@ -303,6 +303,24 @@ menu main_menu {
   }
 
   section {
+    submenu {
+      label: _("Language");
+
+      item {
+        label: _("System Default");
+        action: "app.language";
+        target: "system";
+      }
+
+      item {
+        label: _("简体中文");
+        action: "app.language";
+        target: "zh_CN";
+      }
+    }
+  }
+
+  section {
     item {
       label: _("About Ghostty");
       action: "win.about";

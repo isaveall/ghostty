@@ -10,6 +10,11 @@ class AppDelegate: NSObject,
                     NSApplicationDelegate,
                     UNUserNotificationCenterDelegate,
                     GhosttyAppDelegate {
+    // Stores the original English titles of menu items so that language switching
+    // always translates from the English msgid, not from a previously translated title.
+    // Uses weak keys so entries are removed automatically when menu items are deallocated.
+    private let menuItemOriginalTitles = NSMapTable<NSMenuItem, NSString>.weakToStrongObjects()
+
     // The application logger. We should probably move this at some point to a dedicated
     // class/struct but for now it lives here! 🤷‍♂️
     static let logger = Logger(
@@ -81,6 +86,8 @@ class AppDelegate: NSObject,
     @IBOutlet private var menuMoveSplitDividerDown: NSMenuItem?
     @IBOutlet private var menuMoveSplitDividerLeft: NSMenuItem?
     @IBOutlet private var menuMoveSplitDividerRight: NSMenuItem?
+
+    @IBOutlet private var menuHelp: NSMenuItem?
 
     /// The dock menu
     private var dockMenu: NSMenu = NSMenu()
@@ -271,7 +278,7 @@ class AppDelegate: NSObject,
 
         // Configure user notifications
         let actions = [
-            UNNotificationAction(identifier: Ghostty.userNotificationActionShow, title: "Show")
+            UNNotificationAction(identifier: Ghostty.userNotificationActionShow, title: String(cString: ghostty_translate("Show")))
         ]
 
         let center = UNUserNotificationCenter.current()
@@ -305,6 +312,9 @@ class AppDelegate: NSObject,
 
         // Setup our menu
         setupMenuImages()
+        setupLanguageMenu()
+        setupMenuDelegates()
+        translateMenus()
 
         // Setup signal handlers
         setupSignals()
@@ -406,10 +416,10 @@ class AppDelegate: NSObject,
 
         // We have some visible window. Show an app-wide modal to confirm quitting.
         let alert = NSAlert()
-        alert.messageText = "Quit Ghostty?"
-        alert.informativeText = "All terminal sessions will be terminated."
-        alert.addButton(withTitle: "Close Ghostty")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = String(cString: ghostty_translate("Quit Ghostty?"))
+        alert.informativeText = String(cString: ghostty_translate("All terminal sessions will be terminated."))
+        alert.addButton(withTitle: String(cString: ghostty_translate("Close Ghostty")))
+        alert.addButton(withTitle: String(cString: ghostty_translate("Cancel")))
         alert.alertStyle = .warning
         switch alert.runModal() {
         case .alertFirstButtonReturn:
@@ -499,9 +509,9 @@ class AppDelegate: NSObject,
             // may want to show this as a sheet on the focused window (especially if we're
             // opening a tab). I'm not sure.
             let alert = NSAlert()
-            alert.messageText = "Allow Ghostty to execute \"\(filename)\"?"
-            alert.addButton(withTitle: "Allow")
-            alert.addButton(withTitle: "Cancel")
+            alert.messageText = String(cString: ghostty_translate("Allow Ghostty to execute")) + " \"\(filename)\"?"
+            alert.addButton(withTitle: String(cString: ghostty_translate("Allow")))
+            alert.addButton(withTitle: String(cString: ghostty_translate("Cancel")))
             alert.alertStyle = .warning
             switch alert.runModal() {
             case .alertFirstButtonReturn:
@@ -1089,8 +1099,8 @@ extension AppDelegate {
     }
 
     private func reloadDockMenu() {
-        let newWindow = NSMenuItem(title: "New Window", action: #selector(newWindow), keyEquivalent: "")
-        let newTab = NSMenuItem(title: "New Tab", action: #selector(newTab), keyEquivalent: "")
+        let newWindow = NSMenuItem(title: String(cString: ghostty_translate("New Window")), action: #selector(newWindow), keyEquivalent: "")
+        let newTab = NSMenuItem(title: String(cString: ghostty_translate("New Tab")), action: #selector(newTab), keyEquivalent: "")
 
         dockMenu.removeAllItems()
         dockMenu.addItem(newWindow)
@@ -1139,6 +1149,141 @@ extension AppDelegate {
         self.menuMoveSplitDividerRight?.setImageIfDesired(systemSymbolName: "arrow.right.to.line")
         self.menuFloatOnTop?.setImageIfDesired(systemSymbolName: "square.filled.on.square")
         self.menuFindParent?.setImageIfDesired(systemSymbolName: "text.page.badge.magnifyingglass")
+    }
+
+    /// Set self as NSMenuDelegate on all top-level menus so that
+    /// menuWillOpen fires each time a menu opens. This allows us to
+    /// translate dynamically injected AppKit items (AutoFill, Start
+    /// Dictation, Emoji & Symbols, Fill, Center, etc.) that don't
+    /// exist yet when translateMenus() runs at launch.
+    private func setupMenuDelegates() {
+        guard let mainMenu = NSApp.mainMenu else { return }
+        for item in mainMenu.items {
+            item.submenu?.delegate = self
+        }
+    }
+
+    /// Translate all menu items using gettext translations from the Zig core.
+    private func translateMenus() {
+        guard let mainMenu = NSApp.mainMenu else { return }
+        translateMenu(mainMenu)
+    }
+
+    /// Recursively translate all items in a menu.
+    private func translateMenu(_ menu: NSMenu) {
+        for item in menu.items {
+            // Skip separator items
+            if item.isSeparatorItem { continue }
+
+            if item.title.count > 0 {
+                // On first translation, save the original English title so that
+                // subsequent language switches always translate from the English
+                // msgid, not from a previously translated title.
+                if menuItemOriginalTitles.object(forKey: item) == nil {
+                    menuItemOriginalTitles.setObject(item.title as NSString, forKey: item)
+                }
+
+                // Always translate from the stored original English title.
+                let originalTitle = menuItemOriginalTitles.object(forKey: item)! as String
+                let translated = String(cString: ghostty_translate(originalTitle))
+                // Use the translation if found; otherwise restore the original English.
+                let newTitle = (translated.count > 0 && translated != originalTitle)
+                    ? translated
+                    : originalTitle
+                item.title = newTitle
+
+                // Top-level menus (e.g. File, Edit, View) have their title
+                // mirrored on the NSMenu itself — update that too so the menu
+                // bar shows the translated name.
+                if let submenu = item.submenu, submenu.title == originalTitle || submenu.title == item.title {
+                    submenu.title = newTitle
+                }
+            }
+
+            // Recursively translate submenus
+            if let submenu = item.submenu {
+                translateMenu(submenu)
+            }
+        }
+    }
+
+    /// Build the Language submenu under the Help menu.
+    private func setupLanguageMenu() {
+        guard let helpMenu = menuHelp?.submenu else { return }
+
+        let languageMenu = NSMenu(title: "Language")
+
+        let languages: [(String, String?)] = [
+            ("System Default", nil),
+            ("English", "en"),
+            ("简体中文", "zh_CN"),
+            ("繁體中文", "zh_TW"),
+            ("Français", "fr"),
+            ("Deutsch", "de"),
+            ("日本語", "ja"),
+            ("한국어", "ko_KR"),
+            ("Español", "es_ES"),
+            ("Português (Brasil)", "pt_BR"),
+            ("Русский", "ru"),
+        ]
+
+        for (title, code) in languages {
+            let item = NSMenuItem(
+                title: title,
+                action: #selector(setLanguage(_:)),
+                keyEquivalent: ""
+            )
+            item.representedObject = code
+            languageMenu.addItem(item)
+        }
+
+        // Set checkmark on current language
+        let currentLang = ghostty.config.language
+        for item in languageMenu.items {
+            let itemLang = item.representedObject as? String?
+            if itemLang == currentLang {
+                item.state = .on
+            } else {
+                item.state = .off
+            }
+        }
+
+        let languageItem = NSMenuItem(title: "Language", action: nil, keyEquivalent: "")
+        languageItem.submenu = languageMenu
+
+        // Insert before the last item (Ghostty Help)
+        let insertIndex = max(helpMenu.numberOfItems - 1, 0)
+        helpMenu.insertItem(languageItem, at: insertIndex)
+    }
+
+    /// Handle language menu selection.
+    @objc private func setLanguage(_ sender: NSMenuItem) {
+        let language = sender.representedObject as? String? ?? nil
+        Self.logger.info("setLanguage called, language=\(language ?? "nil", privacy: .public)")
+
+        // Update checkmarks
+        if let submenu = sender.menu {
+            for item in submenu.items {
+                item.state = .off
+            }
+            sender.state = .on
+        }
+
+        // Write to config file and apply locale
+        if let lang = language {
+            Self.logger.info("Applying language: \(lang, privacy: .public)")
+            ghostty_config_set_language(lang)
+            ghostty_app_apply_language(lang)
+        } else {
+            Self.logger.info("Applying system default")
+            ghostty_config_set_language(nil)
+            ghostty_app_apply_language(nil)
+        }
+
+        // Re-translate all menus with the new language
+        Self.logger.info("Re-translating menus")
+        translateMenus()
+        Self.logger.info("Language switch complete")
     }
 
     /// Sync all of our menu item keyboard shortcuts with the Ghostty configuration.
@@ -1269,6 +1414,24 @@ extension AppDelegate {
     }
 }
 
+// MARK: NSMenuDelegate
+
+extension AppDelegate: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        // Ensure submenu delegates are set so that menuWillOpen
+        // also fires for dynamically populated submenus (e.g. Services).
+        for item in menu.items {
+            if let submenu = item.submenu, submenu.delegate !== self {
+                submenu.delegate = self
+            }
+        }
+        // Re-translate on every open to handle dynamically injected
+        // AppKit items (AutoFill, Start Dictation, Emoji & Symbols,
+        // Fill, Center, Move & Resize, Full Screen Title, etc.).
+        translateMenu(menu)
+    }
+}
+
 // MARK: NSMenuItemValidation
 
 extension AppDelegate: NSMenuItemValidation {
@@ -1284,18 +1447,28 @@ extension AppDelegate: NSMenuItemValidation {
             return NSApp.keyWindow is TerminalWindow
 
         case #selector(undo(_:)):
+            // Ensure the original English title is stored so translateMenus()
+            // can always translate from the English msgid on language switches.
+            if menuItemOriginalTitles.object(forKey: item) == nil {
+                menuItemOriginalTitles.setObject("Undo", forKey: item)
+            }
+            let undoStr = String(cString: ghostty_translate("Undo"))
             if undoManager.canUndo {
-                item.title = "Undo \(undoManager.undoActionName)"
+                item.title = "\(undoStr) \(undoManager.undoActionName)"
             } else {
-                item.title = "Undo"
+                item.title = undoStr
             }
             return undoManager.canUndo
 
         case #selector(redo(_:)):
+            if menuItemOriginalTitles.object(forKey: item) == nil {
+                menuItemOriginalTitles.setObject("Redo", forKey: item)
+            }
+            let redoStr = String(cString: ghostty_translate("Redo"))
             if undoManager.canRedo {
-                item.title = "Redo \(undoManager.redoActionName)"
+                item.title = "\(redoStr) \(undoManager.redoActionName)"
             } else {
-                item.title = "Redo"
+                item.title = redoStr
             }
             return undoManager.canRedo
 

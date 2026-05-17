@@ -278,7 +278,10 @@ pub const Application = extern struct {
                 break :old_language alloc.dupeZ(u8, result.value) catch break :old_language null;
             };
 
-            if (config.language) |language| _ = internal_os.setenv("LANG", language);
+            if (config.language) |language| {
+                _ = internal_os.setenv("LANG", language);
+                internal_os.i18n.setLanguage(language);
+            }
 
             break :saved_language old_language;
         };
@@ -1412,6 +1415,16 @@ pub const Application = extern struct {
         const as_variant_type = glib.VariantType.new("as");
         defer as_variant_type.free();
 
+        const s_variant_type = glib.VariantType.new("s");
+        defer s_variant_type.free();
+
+        // Get current language for initial state
+        const priv = self.private();
+        const config = priv.config.get();
+        const current_lang = if (config.language) |lang| lang else "system";
+        const lang_variant = glib.Variant.newString(current_lang);
+        _ = lang_variant.refSink();
+
         const actions = [_]ext.actions.Action(Self){
             .init("new-window", actionNewWindow, null),
             .init("new-window-command", actionNewWindow, as_variant_type),
@@ -1419,6 +1432,7 @@ pub const Application = extern struct {
             .init("present-surface", actionPresentSurface, t_variant_type),
             .init("quit", actionQuit, null),
             .init("reload-config", actionReloadConfig, null),
+            .initStateful("language", actionLanguage, s_variant_type, lang_variant),
         };
 
         ext.actions.add(Self, self, &actions);
@@ -1667,6 +1681,39 @@ pub const Application = extern struct {
         priv.core_app.performAction(self.rt(), .reload_config) catch |err| {
             log.warn("error reloading config err={}", .{err});
         };
+    }
+
+    fn actionLanguage(
+        action: *gio.SimpleAction,
+        parameter_: ?*glib.Variant,
+        self: *Self,
+    ) callconv(.c) void {
+        const parameter = parameter_ orelse return;
+
+        const s_type = glib.VariantType.new("s");
+        defer glib.VariantType.free(s_type);
+        if (glib.Variant.isOfType(parameter, s_type) == 0) return;
+
+        const lang_str = parameter.getString(null) orelse return;
+
+        // Determine the language value to write (null for system default)
+        const lang_value: ?[:0]const u8 = if (std.mem.eql(u8, std.mem.span(lang_str), "system"))
+            null
+        else
+            std.mem.span(lang_str);
+
+        // Write to config file
+        const alloc = self.core().alloc;
+        configpkg.edit.setLanguage(alloc, lang_value) catch |err| {
+            log.err("error setting language config err={}", .{err});
+            return;
+        };
+
+        // Update the action state (for the checkmark)
+        const new_state = glib.Variant.newString(lang_str);
+        action.setState(new_state);
+
+        log.info("language set to '{s}', restart Ghostty to apply", .{std.mem.span(lang_str)});
     }
 
     fn actionQuit(

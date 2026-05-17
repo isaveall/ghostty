@@ -463,6 +463,15 @@ extension Ghostty {
             return MacHidden(rawValue: str) ?? .never
         }
 
+        var language: String? {
+            guard let config = self.config else { return nil }
+            var v: UnsafePointer<Int8>?
+            let key = "language"
+            guard ghostty_config_get(config, &v, key, UInt(key.lengthOfBytes(using: .utf8))) else { return nil }
+            guard let ptr = v else { return nil }
+            return String(cString: ptr)
+        }
+
         var focusFollowsMouse: Bool {
             guard let config = self.config else { return false }
             var v = false

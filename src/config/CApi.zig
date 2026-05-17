@@ -141,6 +141,20 @@ export fn ghostty_config_open_path() String {
     return .fromSlice(path);
 }
 
+/// Set the language config value in the config file.
+/// Pass null (or an empty string) to remove the language setting.
+export fn ghostty_config_set_language(language_ptr: ?[*:0]const u8) void {
+    const language: ?[]const u8 = if (language_ptr) |ptr| blk: {
+        const str = std.mem.span(ptr);
+        if (str.len == 0) break :blk null;
+        break :blk str;
+    } else null;
+
+    edit.setLanguage(state.alloc, language) catch |err| {
+        log.err("error setting language config err={}", .{err});
+    };
+}
+
 /// Sync with ghostty_diagnostic_s
 const Diagnostic = extern struct {
     message: [*:0]const u8 = "",

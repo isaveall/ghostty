@@ -344,3 +344,324 @@ msgstr "已清空剪贴板"
 #: src/apprt/gtk/class/window.zig:1708
 msgid "Ghostty Developers"
 msgstr "Ghostty 开发团队"
+
+#. macOS menu items (MainMenu.xib)
+#: macos/MainMenu.xib
+msgid "File"
+msgstr "文件"
+
+#: macos/MainMenu.xib
+msgid "Edit"
+msgstr "编辑"
+
+#: macos/MainMenu.xib
+msgid "View"
+msgstr "视图"
+
+#: macos/MainMenu.xib
+msgid "Help"
+msgstr "帮助"
+
+#: macos/MainMenu.xib
+msgid "Undo"
+msgstr "撤销"
+
+#: macos/MainMenu.xib
+msgid "Redo"
+msgstr "重做"
+
+#: macos/MainMenu.xib
+msgid "Select All"
+msgstr "全选"
+
+#: macos/MainMenu.xib
+msgid "Paste Selection"
+msgstr "粘贴选中内容"
+
+#: macos/MainMenu.xib
+msgid "Find"
+msgstr "查找"
+
+#: macos/MainMenu.xib
+msgid "Find..."
+msgstr "查找…"
+
+#: macos/MainMenu.xib
+msgid "Find Next"
+msgstr "查找下一个"
+
+#: macos/MainMenu.xib
+msgid "Find Previous"
+msgstr "查找上一个"
+
+#: macos/MainMenu.xib
+msgid "Hide Find Bar"
+msgstr "隐藏查找栏"
+
+#: macos/MainMenu.xib
+msgid "Use Selection for Find"
+msgstr "使用选中内容查找"
+
+#: macos/MainMenu.xib
+msgid "Jump to Selection"
+msgstr "跳转到选中内容"
+
+#: macos/MainMenu.xib
+msgid "Increase Font Size"
+msgstr "增大字号"
+
+#: macos/MainMenu.xib
+msgid "Decrease Font Size"
+msgstr "缩小字号"
+
+#: macos/MainMenu.xib
+msgid "Reset Font Size"
+msgstr "重置字号"
+
+#: macos/MainMenu.xib
+msgid "Change Terminal Title..."
+msgstr "更改终端标题…"
+
+#: macos/MainMenu.xib
+msgid "Change Tab Title..."
+msgstr "更改标签页标题…"
+
+#: macos/MainMenu.xib
+msgid "Show/Hide All Terminals"
+msgstr "显示/隐藏所有终端"
+
+#: macos/MainMenu.xib
+msgid "Toggle Full Screen"
+msgstr "切换全屏"
+
+#: macos/MainMenu.xib
+msgid "Float on Top"
+msgstr "置于顶层"
+
+#: macos/MainMenu.xib
+msgid "Secure Keyboard Entry"
+msgstr "安全键盘输入"
+
+#: macos/MainMenu.xib
+msgid "Terminal Read-only"
+msgstr "终端只读"
+
+#: macos/MainMenu.xib
+msgid "Quick Terminal"
+msgstr "快速终端"
+
+#: macos/MainMenu.xib
+msgid "Check for Updates..."
+msgstr "检查更新…"
+
+#: macos/MainMenu.xib
+msgid "Preferences…"
+msgstr "偏好设置…"
+
+#: macos/MainMenu.xib
+msgid "Close All Windows"
+msgstr "关闭所有窗口"
+
+#: macos/MainMenu.xib
+msgid "Bring All to Front"
+msgstr "全部置于前端"
+
+#: macos/MainMenu.xib
+msgid "Minimize"
+msgstr "最小化"
+
+#: macos/MainMenu.xib
+msgid "Zoom"
+msgstr "缩放"
+
+#: macos/MainMenu.xib
+msgid "Zoom Split"
+msgstr "缩放分屏"
+
+#: macos/MainMenu.xib
+msgid "Equalize Splits"
+msgstr "均衡分屏"
+
+#: macos/MainMenu.xib
+msgid "Resize Split"
+msgstr "调整分屏大小"
+
+#: macos/MainMenu.xib
+msgid "Move Divider Up"
+msgstr "上移分屏线"
+
+#: macos/MainMenu.xib
+msgid "Move Divider Down"
+msgstr "下移分屏线"
+
+#: macos/MainMenu.xib
+msgid "Move Divider Left"
+msgstr "左移分屏线"
+
+#: macos/MainMenu.xib
+msgid "Move Divider Right"
+msgstr "右移分屏线"
+
+#: macos/MainMenu.xib
+msgid "Select Split"
+msgstr "选择分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Next Split"
+msgstr "选择下一个分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Previous Split"
+msgstr "选择上一个分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Split Above"
+msgstr "选择上方分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Split Below"
+msgstr "选择下方分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Split Left"
+msgstr "选择左侧分屏"
+
+#: macos/MainMenu.xib
+msgid "Select Split Right"
+msgstr "选择右侧分屏"
+
+#: macos/MainMenu.xib
+msgid "Return To Default Size"
+msgstr "恢复默认大小"
+
+#: macos/MainMenu.xib
+msgid "Use as Default"
+msgstr "设为默认"
+
+#: macos/MainMenu.xib
+msgid "Make Ghostty the Default Terminal"
+msgstr "设为默认终端"
+
+#: macos/MainMenu.xib
+msgid "Services"
+msgstr "服务"
+
+#: macos/MainMenu.xib
+msgid "Hide Ghostty"
+msgstr "隐藏 Ghostty"
+
+#: macos/MainMenu.xib
+msgid "Hide Others"
+msgstr "隐藏其他"
+
+#: macos/MainMenu.xib
+msgid "Show All"
+msgstr "显示全部"
+
+#: macos/MainMenu.xib
+msgid "Ghostty Help"
+msgstr "Ghostty 帮助"
+
+#: macos/MainMenu.xib
+msgid "Quit Ghostty"
+msgstr "退出 Ghostty"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Close Tabs to the Right"
+msgstr "关闭右侧标签页"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Rename Tab..."
+msgstr "重命名标签页…"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Language Changed"
+msgstr "语言已更改"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Ghostty needs to restart to apply the language change. Restart now?"
+msgstr "Ghostty 需要重启以应用语言更改。是否立即重启？"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Restart Now"
+msgstr "立即重启"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Later"
+msgstr "稍后"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Close Ghostty"
+msgstr "关闭 Ghostty"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Allow Ghostty to execute"
+msgstr "允许 Ghostty 执行"
+
+#: macos/Sources/App/macOS/AppDelegate.swift
+msgid "Show"
+msgstr "显示"
+
+#: macos system menu items (AppKit-injected)
+msgid "Show Tab Bar"
+msgstr "显示标签栏"
+
+msgid "Hide Tab Bar"
+msgstr "隐藏标签栏"
+
+msgid "Show All Tabs"
+msgstr "显示所有标签页"
+
+msgid "Move Tab to New Window"
+msgstr "将标签页移到新窗口"
+
+msgid "Merge All Windows"
+msgstr "合并所有窗口"
+
+msgid "Enter Full Screen"
+msgstr "进入全屏"
+
+msgid "Exit Full Screen"
+msgstr "退出全屏"
+
+#: macOS 13+ renames "Preferences…" to "Settings"
+msgid "Settings…"
+msgstr "设置…"
+
+msgid "Settings"
+msgstr "设置"
+
+#: AppKit-injected Edit menu items
+msgid "AutoFill"
+msgstr "自动填充"
+
+msgid "Start Dictation…"
+msgstr "开始听写…"
+
+msgid "Emoji & Symbols"
+msgstr "表情符号与符号"
+
+#: AppKit-injected Window menu items (Move & Resize submenu)
+msgid "Fill"
+msgstr "填充"
+
+msgid "Center"
+msgstr "居中"
+
+msgid "Move & Resize"
+msgstr "移动与调整大小"
+
+msgid "Full Screen"
+msgstr "全屏"
+
+msgid "Full Screen Title"
+msgstr "全屏标题"
+
+msgid "Remove Window from Set"
+msgstr "从集合中移除窗口"
+
+msgid "Show Previous Tab"
+msgstr "显示上一个标签页"
+
+msgid "Show Next Tab"
+msgstr "显示下一个标签页"
