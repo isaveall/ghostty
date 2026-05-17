@@ -665,3 +665,6 @@ msgstr "显示上一个标签页"
 
 msgid "Show Next Tab"
 msgstr "显示下一个标签页"
+
+msgid "Fast, native, feature-rich terminal \nemulator pushing modern features."
+msgstr "快速、原生、功能丰富的终端\n模拟器，推动现代特性。"

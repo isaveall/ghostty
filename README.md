@@ -167,6 +167,13 @@ Supported languages: English, Simplified Chinese, Traditional Chinese,
 French, German, Japanese, Korean, Spanish, Brazilian Portuguese, and
 Russian.
 
+#### Changes in this Fork (v0.1.1)
+
+- About window text is now translatable (title, description, and all
+  property rows switch with the selected language)
+- Version number updated to 0.1.1
+- iSaveall attribution added to the About window
+
 #### Cross-platform `libghostty` for Embeddable Terminals
 
 In addition to being a standalone terminal emulator, Ghostty is a
